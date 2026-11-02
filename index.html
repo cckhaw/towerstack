@@ -189,6 +189,62 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
   }
+  /* ---------- Worlds / leaderboard ---------- */
+  .seg {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; padding: 3px;
+    border-radius: 12px; background: var(--chip); position: relative;
+  }
+  .seg button {
+    appearance: none; border: 0; background: transparent; cursor: pointer; font-family: var(--font);
+    font-size: 14px; font-weight: 600; color: var(--text); padding: 9px 4px; border-radius: 9px;
+    transition: background 0.25s var(--ease), box-shadow 0.25s var(--ease), transform 0.3s var(--spring);
+  }
+  .seg button:active { transform: scale(0.96); }
+  .seg button[aria-pressed="true"] { background: var(--glass-solid, #fff); box-shadow: 0 2px 8px rgba(0,0,0,.14), 0 0 0 0.5px rgba(0,0,0,.06); }
+  @media (prefers-color-scheme: dark) { .seg button[aria-pressed="true"] { background: rgba(99, 99, 102, 0.9); } }
+  .seg button:focus-visible { outline: 3px solid rgba(0, 122, 255, 0.55); outline-offset: 1px; }
+  .world-name { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-top: 2px; }
+  .world-desc { min-height: 2.7em; }
+  .diff { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 8px; }
+  .diff i { width: 7px; height: 7px; border-radius: 50%; background: var(--chip); display: block; }
+  .diff i.on { background: #ff9f0a; }
+  .link-btn {
+    appearance: none; border: 0; background: none; cursor: pointer; font-family: var(--font);
+    font-size: 15px; font-weight: 600; color: var(--blue); padding: 8px 12px; border-radius: 10px;
+    transition: transform 0.3s var(--spring), opacity .2s;
+  }
+  .link-btn:active { transform: scale(0.95); opacity: .7; }
+  .link-btn:focus-visible { outline: 3px solid rgba(0, 122, 255, 0.55); }
+  .btn-row { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+  #board { z-index: 20; background: rgba(0, 0, 0, 0.18); }
+  #board .card { max-height: min(640px, 100%); gap: 12px; padding: 26px 22px 20px; }
+  #board h2 { margin-bottom: 0; }
+  .lb { list-style: none; margin: 0; padding: 0; width: 100%; max-height: 330px; overflow-y: auto; text-align: left; }
+  .lb li {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: 12px; font-size: 16px; font-weight: 600;
+  }
+  .lb li:nth-child(odd) { background: var(--chip); }
+  .lb li.me { background: rgba(0, 122, 255, 0.18); box-shadow: inset 0 0 0 1.5px var(--blue); }
+  .lb .rk { color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .lb li:nth-child(1) .rk, .lb li:nth-child(2) .rk, .lb li:nth-child(3) .rk { font-size: 20px; line-height: 1; }
+  .lb .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb .sc { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .lb-status { color: var(--text-2); font-size: 15px; padding: 28px 0; }
+  .submit-box { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .submit-box.hidden { display: none; }
+  .name-row { display: flex; gap: 8px; }
+  .name-row input {
+    flex: 1; min-width: 0; font-family: var(--font); font-size: 17px; font-weight: 500; color: var(--text);
+    background: var(--chip); border: 0; border-radius: 12px; padding: 12px 14px; outline: none;
+    -webkit-user-select: text; user-select: text;
+  }
+  .name-row input:focus { box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.45); }
+  .name-row .btn { min-width: 0; padding: 12px 18px; font-size: 16px; }
+  .btn:disabled { opacity: 0.55; cursor: default; filter: none; transform: none; }
+  #submitMsg { font-size: 14px; min-height: 1.3em; color: var(--text-2); margin: 0; }
+  #submitMsg.err { color: #ff3b30; } #submitMsg.ok { color: #34c759; font-weight: 600; }
+  .sheet { max-height: 94vh; overflow-y: auto; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
@@ -215,12 +271,19 @@
   <div class="card glass">
     <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
     <h1>Tower Stack</h1>
-    <p>Time your taps. Stack it high.<br>Nail it perfectly to grow your blocks.</p>
+    <div class="seg" id="worldSeg" role="group" aria-label="Choose a world">
+      <button data-world="easy" aria-pressed="false">Easy</button>
+      <button data-world="medium" aria-pressed="true">Medium</button>
+      <button data-world="hard" aria-pressed="false">Hard</button>
+    </div>
+    <div class="world-name"><span id="worldName">Neon City</span><span class="diff" id="worldDiff" aria-hidden="true"><i></i><i></i><i></i></span></div>
+    <p class="world-desc" id="worldDesc"></p>
     <div class="best-badge">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5l-5.9 3.2 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>
       Best <b id="startBest">0</b>
     </div>
     <button class="btn" id="btnStart">Tap to Play</button>
+    <button class="link-btn" id="btnBoardStart">Leaderboard</button>
     <p class="hint">Tap, click or press Space to drop</p>
   </div>
 </section>
@@ -247,7 +310,33 @@
       </div>
       <span class="newbest" id="newBest">New!</span>
     </div>
+    <div class="submit-box" id="submitBox">
+      <div class="name-row">
+        <input id="playerName" type="text" maxlength="14" placeholder="Your name" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Your name for the leaderboard">
+        <button class="btn" id="btnSubmit">Submit</button>
+      </div>
+      <p id="submitMsg" role="status"></p>
+    </div>
     <button class="btn" id="btnReplay">Play Again</button>
+    <div class="btn-row">
+      <button class="link-btn" id="btnBoardOver">Leaderboard</button>
+      <button class="link-btn" id="btnWorlds">Change World</button>
+    </div>
+  </div>
+</section>
+
+<section class="overlay" id="board" aria-label="Leaderboard">
+  <div class="card glass">
+    <h2>Leaderboard</h2>
+    <div class="seg" id="boardSeg" role="group" aria-label="Leaderboard world">
+      <button data-world="easy" aria-pressed="false">Easy</button>
+      <button data-world="medium" aria-pressed="true">Medium</button>
+      <button data-world="hard" aria-pressed="false">Hard</button>
+    </div>
+    <div class="world-name" id="boardWorld"></div>
+    <ol class="lb" id="lbList"></ol>
+    <div class="lb-status" id="lbStatus" hidden></div>
+    <button class="btn secondary" id="btnBoardClose">Close</button>
   </div>
 </section>
 
@@ -260,17 +349,32 @@
    ===================================================================== */
 
 // ---------- Tunables (world units ≈ px at scale 1) ----------
-const BASE = 200;          // original block footprint
 const BLOCK_H = 26;        // block thickness
-const PERFECT_PX = 2;      // alignment error treated as a perfect snap
 const COMBO_NEEDED = 3;    // consecutive perfects before blocks regrow
-const COMBO_GROW = 12;     // regrowth in px
-const BASE_SPEED = 230;    // px / s
-const SPEED_PER_LEVEL = 0.02;
-const RANGE = 250;         // slide distance either side of the stack
 const GRAVITY = 1700;
-const HUES = [356, 188, 48, 100, 272];   // Roblox red, neon cyan, sunny yellow, lime, electric purple
 const LAYERS_PER_PALETTE = 10;
+
+// Three worlds, each with its own difficulty, palette and leaderboard.
+//   base    – starting block footprint      speed – slide speed (px/s)
+//   step    – speed gain per level          range – slide distance either side
+//   perfect – snap tolerance (px)           grow  – combo regrowth (px)
+const WORLDS = {
+  easy:   { id: 'easy',   tag: 'Easy',   name: 'Sunny Meadow', level: 1, base: 220, speed: 165, step: 0.012, range: 230, perfect: 4, grow: 16,
+            hues: [142, 188, 48, 100, 205], desc: 'Slow blocks and a forgiving snap zone. Perfect for warming up.' },
+  medium: { id: 'medium', tag: 'Medium', name: 'Neon City',    level: 2, base: 200, speed: 230, step: 0.02,  range: 250, perfect: 2, grow: 12,
+            hues: [356, 188, 48, 100, 272], desc: 'The classic. Speed climbs 2% every layer.' },
+  hard:   { id: 'hard',   tag: 'Hard',   name: 'Volcano Peak', level: 3, base: 170, speed: 300, step: 0.03,  range: 270, perfect: 2, grow: 8,
+            hues: [8, 28, 48, 330, 272], desc: 'Small, fast blocks and a +3% speed ramp. Good luck.' }
+};
+const WORLD_IDS = ['easy', 'medium', 'hard'];
+let world = WORLDS.medium;
+// Active-world values (set by applyWorld)
+let BASE = 200, PERFECT_PX = 2, COMBO_GROW = 12, BASE_SPEED = 230, SPEED_PER_LEVEL = 0.02, RANGE = 250, HUES = world.hues;
+function applyWorld(id) {
+  world = WORLDS[id] || WORLDS.medium;
+  BASE = world.base; PERFECT_PX = world.perfect; COMBO_GROW = world.grow;
+  BASE_SPEED = world.speed; SPEED_PER_LEVEL = world.step; RANGE = world.range; HUES = world.hues;
+}
 const SAT = 88;
 const COS30 = 0.8660254;
 
@@ -279,21 +383,28 @@ const cv = $('c'), ctx = cv.getContext('2d');
 const el = {
   hud: $('hud'), score: $('score'), combo: $('combo'), badges: $('badges'),
   start: $('start'), pause: $('pause'), over: $('over'),
-  startBest: $('startBest'), finalScore: $('finalScore'), bestScore: $('bestScore'), newBest: $('newBest')
+  startBest: $('startBest'), board: $('board'), lbList: $('lbList'), lbStatus: $('lbStatus'), boardWorld: $('boardWorld'),
+  name: $('playerName'), submit: $('btnSubmit'), submitMsg: $('submitMsg'), submitBox: $('submitBox'),
+  worldName: $('worldName'), worldDesc: $('worldDesc'), worldDiff: $('worldDiff'), finalScore: $('finalScore'), bestScore: $('bestScore'), newBest: $('newBest')
 };
 const mqDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : { matches: false };
 const mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
 // ---------- Persistence (guarded) ----------
-const BEST_KEY = 'towerstack.best';
-function loadBest() { try { return parseInt(localStorage.getItem(BEST_KEY), 10) || 0; } catch (e) { return 0; } }
-function saveBest(v) { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) { /* ignore */ } }
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) { /* ignore */ } }
+};
+const bests = {};
+WORLD_IDS.forEach(id => { bests[id] = parseInt(store.get('towerstack.best.' + id), 10) || 0; });
+if (!bests.medium) bests.medium = parseInt(store.get('towerstack.best'), 10) || 0;   // pre-worlds high score
+const saveBest = () => WORLD_IDS.forEach(id => store.set('towerstack.best.' + id, bests[id]));
 
 // ---------- State ----------
 let state = 'menu';            // menu | playing | paused | dying | over
 let W = 0, VH = 0, DPR = 1, S = 1;
 let stack = [], moving = null, debris = [], rings = [], parts = [], collapseQ = [];
-let score = 0, combo = 0, best = loadBest();
+let score = 0, combo = 0, submitted = false, boardOpen = false;
 let time = 0, collapseT = 0, overT = 0, overShownAt = 0, shake = 0;
 let camX = 0, camY = 0, camZ = 0, camXT = 0, camYT = 0, camZT = 0;
 let oy = 0.78, oyT = 0.78;     // vertical anchor (fraction of viewport height)
@@ -644,12 +755,18 @@ function collapseLayer() {
 
 function showOver() {
   state = 'over'; overShownAt = performance.now();
-  const isBest = score > best;
-  if (isBest) { best = score; saveBest(best); }
+  const isBest = score > bests[world.id];
+  if (isBest) { bests[world.id] = score; saveBest(); }
   el.finalScore.textContent = score;
-  el.bestScore.textContent = best;
-  el.startBest.textContent = best;
+  el.bestScore.textContent = bests[world.id];
+  el.startBest.textContent = bests[world.id];
   el.newBest.classList.toggle('show', isBest && score > 0);
+  // leaderboard submission box
+  submitted = false;
+  el.submitBox.classList.toggle('hidden', score < 1);
+  el.name.value = store.get('towerstack.name') || '';
+  el.submit.disabled = false; el.submit.textContent = 'Submit';
+  setMsg('Post your score to the ' + world.tag + ' leaderboard.', '');
   el.hud.classList.remove('show');
   show(el.over, true); el.over.setAttribute('aria-hidden', 'false');
   sfx.over();
@@ -793,10 +910,100 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+// ---------- Worlds ----------
+function renderWorldUI() {
+  document.querySelectorAll('#worldSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.world === world.id)));
+  el.worldName.textContent = world.name;
+  el.worldDesc.textContent = world.desc;
+  el.worldDiff.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i < world.level));
+  el.startBest.textContent = bests[world.id];
+}
+function selectWorld(id) {
+  if (!WORLDS[id]) return;
+  applyWorld(id); store.set('towerstack.world', id);
+  newGame(); renderWorldUI();
+  sfx.ui();
+}
+function toMenu() {
+  state = 'menu'; newGame(); oyT = 0.78;
+  show(el.over, false); el.over.setAttribute('aria-hidden', 'true'); show(el.pause, false);
+  el.hud.classList.remove('show');
+  renderWorldUI(); show(el.start, true);
+}
+
+// ---------- Leaderboard ----------
+function setMsg(t, cls) { el.submitMsg.textContent = t; el.submitMsg.className = cls || ''; }
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  let j = {}; try { j = await r.json(); } catch (e) { /* non-JSON */ }
+  if (!r.ok) { const err = new Error(j.error || 'http_' + r.status); err.code = j.error; throw err; }
+  return j;
+}
+let boardWorld = 'medium', boardReq = 0;
+function renderEntries(entries, hl) {
+  el.lbList.textContent = '';
+  const medals = ['🥇', '🥈', '🥉'];
+  entries.forEach((e, i) => {
+    const li = document.createElement('li');
+    if (hl && e.name.toLowerCase() === hl.name.toLowerCase() && e.score === hl.score) li.className = 'me';
+    const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = i < 3 ? medals[i] : String(i + 1);
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = e.name;
+    const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = e.score;
+    li.append(rk, nm, sc); el.lbList.appendChild(li);
+  });
+  el.lbStatus.hidden = entries.length > 0;
+  if (!entries.length) el.lbStatus.textContent = 'No scores yet — be the first!';
+}
+async function loadBoard(id, hl, preset) {
+  boardWorld = id;
+  document.querySelectorAll('#boardSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.world === id)));
+  el.boardWorld.textContent = WORLDS[id].name;
+  const req = ++boardReq;
+  if (preset) { renderEntries(preset, hl); return; }
+  el.lbList.textContent = ''; el.lbStatus.hidden = false; el.lbStatus.textContent = 'Loading…';
+  try {
+    const j = await api('/api/scores?world=' + id);
+    if (req === boardReq) renderEntries(j.entries || [], hl);
+  } catch (e) {
+    if (req === boardReq) { el.lbList.textContent = ''; el.lbStatus.hidden = false; el.lbStatus.textContent = 'Couldn’t load the leaderboard. Check your connection.'; }
+  }
+}
+function openBoard(id, hl, preset) {
+  boardOpen = true; show(el.board, true); loadBoard(id, hl, preset);
+}
+function closeBoard() { boardOpen = false; show(el.board, false); }
+
+async function submitScore() {
+  if (submitted || score < 1 || el.submit.disabled) return;
+  const name = el.name.value.replace(/\s+/g, ' ').trim();
+  if (name.length < 2) { setMsg('Enter a name (2–14 characters).', 'err'); el.name.focus(); return; }
+  el.submit.disabled = true; setMsg('Submitting…', '');
+  try {
+    const j = await api('/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ world: world.id, name, score }) });
+    submitted = true; store.set('towerstack.name', j.name);
+    el.submit.textContent = 'Submitted ✓';
+    setMsg(j.improved ? 'You’re #' + j.rank + ' in ' + world.name + '!' : 'You already have a higher score here (#' + j.rank + ').', 'ok');
+    openBoard(world.id, { name: j.name, score: j.score }, j.entries);
+  } catch (e) {
+    el.submit.disabled = false;
+    setMsg(e.code === 'name_rejected' ? 'That name isn’t allowed. Please choose another.'
+         : e.code === 'invalid_name' ? 'Use 2–14 letters, numbers, spaces, _ - or .'
+         : 'Couldn’t submit. Please try again.', 'err');
+  }
+}
+
 // ---------- Input ----------
 function blurActive() { const a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); }
 function onButton(id, fn) { $(id).addEventListener('click', () => { blurActive(); fn(); }); }
 
+document.querySelectorAll('#worldSeg button').forEach(b => b.addEventListener('click', () => selectWorld(b.dataset.world)));
+document.querySelectorAll('#boardSeg button').forEach(b => b.addEventListener('click', () => { sfx.ui(); loadBoard(b.dataset.world); }));
+onButton('btnBoardStart', () => { audioInit(); openBoard(world.id); });
+onButton('btnBoardOver', () => openBoard(world.id));
+onButton('btnBoardClose', closeBoard);
+onButton('btnWorlds', toMenu);
+el.submit.addEventListener('click', submitScore);
 onButton('btnStart', startGame);
 onButton('btnReplay', startGame);
 onButton('btnRestart', startGame);
@@ -817,6 +1024,8 @@ function primaryAction() {
 }
 window.addEventListener('keydown', e => {
   if (e.repeat) return;
+  if (e.target && e.target.tagName === 'INPUT') { if (e.code === 'Enter') { e.preventDefault(); submitScore(); } return; }
+  if (boardOpen) { if (e.code === 'Escape') closeBoard(); else if (e.code === 'Space' || e.code === 'Enter') e.preventDefault(); return; }
   if (e.code === 'Space' || e.code === 'Enter') {
     e.preventDefault(); blurActive(); audioInit(); primaryAction();
   } else if (e.code === 'KeyP' || e.code === 'Escape') {
@@ -831,7 +1040,14 @@ window.addEventListener('blur', pauseGame);
 document.addEventListener('contextmenu', e => e.preventDefault());
 
 // ---------- Boot ----------
-el.startBest.textContent = best;
+{
+  let saved = store.get('towerstack.world');
+  const q = new URLSearchParams(location.search).get('world');
+  if (WORLDS[q]) saved = q;
+  applyWorld(WORLDS[saved] ? saved : 'medium');
+  bgHue = HUES[0];
+}
+renderWorldUI();
 newGame();
 requestAnimationFrame(frame);
 
