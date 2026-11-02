@@ -44,7 +44,8 @@ An isometric, Roblox-style voxel stacking arcade game. Drop sliding blocks onto 
 | Start / replay | `Space`, `Enter`, or the on-screen button |
 | Pause / resume | Pause button, `P`, or `Esc` |
 | Restart | Restart button or `R` |
-| Mute / unmute | Speaker button (top right) or `M` |
+| Music on / off | Music-note button (top right) or `M` |
+| Sound effects on / off | Speaker button (top right) or `S` |
 | Close leaderboard | Close button or `Esc` |
 
 The game auto-pauses when the tab loses focus or visibility.
@@ -69,16 +70,26 @@ Worlds are defined in the `WORLDS` object near the top of the script in `index.h
 
 ## Audio
 
-All sound is synthesised at runtime with the **Web Audio API** (no audio files):
+Everything is synthesised at runtime with the **Web Audio API**: no audio files. Music and sound effects have **separate on/off toggles** (top right; keys `M` and `S`), both remembered between visits. The audio context starts on the first tap or key press, as browsers require.
+
+**Sound effects**
 
 - soft mechanical **click** when the block reverses direction and as it slides
 - rising **C-major scale** note for each stacked layer (wraps after ~3 octaves)
 - bell-like **chime** arpeggio on perfect snaps (longer with higher combo)
 - crisp **chop** (filtered noise + pitch drop) on slice
 - playful bouncing **tumble** for falling debris
-- low **rumble** and a descending phrase on collapse / game over
+- **start** whoosh, a **fanfare every 10 layers** (when the colours shift), a **new-best** jingle, and a low rumble plus descending phrase on collapse / game over
 
-The **mute button** (top right, or `M`) silences everything instantly; the setting is saved. The audio context is created on the first user gesture, as browsers require.
+**Background music**: a procedural, endlessly looping 4-bar theme per world, scheduled with a Web Audio look-ahead clock.
+
+| World | Tempo | Feel |
+| --- | --- | --- |
+| Sunny Meadow | 100 BPM | C–Am–F–G, soft pad, gentle triangle arpeggio, shaker |
+| Neon City | 112 BPM | Am–F–C–G, pad, 8th-note arpeggio, syncopated bass, kick + clap + hats |
+| Volcano Peak | 132 BPM | Dm–B♭–F–C, driving 8th-note bass, 16th square arpeggio, four-on-the-floor kick |
+
+Hi-hats get busier and the arpeggio louder as your tower grows. The music ducks while paused (35%), during the collapse (12%) and on the Game Over sheet (45%), and the audio context is suspended while the tab is hidden.
 
 ## Leaderboard
 
@@ -123,7 +134,7 @@ Because Blob listings are lexicographic, the highest scores sort first and the n
 ├── api/
 │   ├── scores.js       # GET/POST leaderboard endpoint (Vercel Blob)
 │   └── _profanity.js   # name validation + profanity filter (not exposed as a route)
-├── package.json        # "type": "module"; depends on @vercel/blob
+├── package.json        # "type": "module"; engines.node 26.x; depends on @vercel/blob
 ├── package-lock.json
 ├── vercel.json         # Git deployment rules + clean URLs
 ├── .gitignore
@@ -132,7 +143,7 @@ Because Blob listings are lexicographic, the highest scores sort first and the n
 
 ## Running locally
 
-The game itself needs no build step: open `index.html` in a browser, or serve the folder:
+Use **Node.js 26.x** for the API tooling (`engines.node` in `package.json`). The game itself needs no build step: open `index.html` in a browser, or serve the folder:
 
 ```bash
 python3 -m http.server 8000
@@ -156,6 +167,7 @@ npx vercel dev
 | Team | `cckhaw-5201` (`team_FdOJU6k0aSSHE2P7hHTWrNuP`) |
 | Project | `towerstack` (`prj_XLHkAElZ7iPOYpklJE2A3cyFDQJC`) |
 | Framework | none (static `index.html` + `/api` functions) |
+| Node.js | **26.x** (latest 26 line), set in `package.json` `engines` and the project setting |
 | Production domains | `towerstack-lilac.vercel.app`, `towerstack.khaw.cc` |
 | Git integration | `cckhaw/towerstack`, production branch `main` |
 | Vercel Authentication | **Disabled**; the site and API are public |
@@ -202,7 +214,9 @@ This project deploys **production only**: no preview deployments.
 | `towerstack.best` | legacy pre-worlds best, migrated to Medium |
 | `towerstack.world` | last selected world |
 | `towerstack.name` | last leaderboard name |
-| `towerstack.muted` | mute setting (`1` / `0`) |
+| `towerstack.music` | music on/off (`1` / `0`) |
+| `towerstack.sfx` | sound effects on/off (`1` / `0`) |
+| `towerstack.muted` | legacy single mute switch, migrated to the two settings above |
 
 All access is wrapped in `try/catch`, so the game still works when storage is blocked.
 
