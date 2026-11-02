@@ -7,5 +7,5 @@
   "dependencies": {
     "@vercel/blob": "2.8.2"
   },
-  "engines": { "node": "22.x" }
+  "engines": { "node": "26.x" }
 }
