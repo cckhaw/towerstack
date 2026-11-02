@@ -1,0 +1,11 @@
+{
+  "name": "towerstack",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tower Stack – isometric voxel stacking arcade game",
+  "dependencies": {
+    "@vercel/blob": "2.8.2"
+  },
+  "engines": { "node": "22.x" }
+}
