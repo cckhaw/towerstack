@@ -64,6 +64,7 @@ Worlds are defined in the `WORLDS` object near the top of the script in `index.h
 
 ## Visual design
 
+- **App icon / favicon:** a stack of red, cyan and yellow studded blocks (the game's own palette) on a soft gradient. Provided as `favicon.svg` (browser tab), `favicon.ico` + 16/32/48 PNGs (fallbacks), `apple-touch-icon.png` (iOS home screen), and 192/512 + maskable 512 PNGs referenced by `manifest.webmanifest` (Android / Add to Home Screen, standalone display). The page title is *Tower Stack*.
 - **Apple HIG-style UI:** system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", …`), frosted-glass cards and HUD (`rgba(255,255,255,.75)` + `backdrop-filter: blur(20px)`, 1 px white border, layered soft shadows), pill buttons with spring easing and `scale(.96)` pressed state, a segmented control for worlds, bottom sheet for Game Over, automatic dark mode, safe-area insets for notched phones, and `prefers-reduced-motion` support.
 - **Roblox-style voxel blocks:** rendered in true isometric projection with three lit faces (bright top, medium left, dark right) using per-face gradients and dark outlines, plus LEGO/Roblox-style **studs** on exposed top faces and a studded baseplate.
 - **Debris** is rendered as real rotated 3D boxes (Euler rotation, back-face culling, per-face lighting from the rotated normal).
@@ -136,7 +137,10 @@ Because Blob listings are lexicographic, the highest scores sort first and the n
 │   └── _profanity.js   # name validation + profanity filter (not exposed as a route)
 ├── package.json        # "type": "module"; engines.node 26.x; depends on @vercel/blob
 ├── package-lock.json
-├── vercel.json         # Git deployment rules + clean URLs
+├── vercel.json         # Git deployment rules, clean URLs, headers
+├── manifest.webmanifest# PWA manifest (Add to Home Screen)
+├── favicon.svg / favicon.ico / apple-touch-icon.png
+├── icons/              # 192/512 PNG, maskable 512, 16/32/48 favicons
 ├── .gitignore
 └── README.md
 ```
